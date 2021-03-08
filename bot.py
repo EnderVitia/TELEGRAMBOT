@@ -43,7 +43,7 @@ def send_welcome(message):
                      message.from_user, bot.get_me()), parse_mode='html', reply_markup=markup_menu)
 
 
-@bot.message_handler(func=lambda message: True)
+@bot.message_handler(content_types=['text'])
 def dialog(message):
     while message.text == "Заказать":
         global a
@@ -80,7 +80,8 @@ def dialog(message):
         sugarno = types.InlineKeyboardButton("Нет", callback_data='нет')
         markup_sugar.add(sugaryes, sugarno)
 
-        botmessage = bot.send_message(chat_id=message.chat.id, text="Добавить подсластитель?", reply_markup=markup_sugar)
+        botmessage = bot.send_message(chat_id=message.chat.id, text="Добавить подсластитель?",
+                                      reply_markup=markup_sugar)
         waiting(message.chat.id, botmessage.message_id)
 
         markup_apply = types.InlineKeyboardMarkup(row_width=2)
@@ -91,7 +92,9 @@ def dialog(message):
         f = open("order1.txt", 'r+')
         order1 = [str(line.strip()) for line in f]
         order2 = order1
-        botmessage = bot.send_message(message.chat.id, text=("Ваш заказ:\n"+"Крепость: "+ order1[0] +"\nВкус: " + order1[1]+"\nКулер: "+ order1[2] +"\nПодсластитель: "+ order1[3]), reply_markup=markup_apply)
+        botmessage = bot.send_message(message.chat.id, text=(
+                "Ваш заказ:\n" + "Крепость: " + order1[0] + "\nВкус: " + order1[1] + "\nКулер: " + order1[
+            2] + "\nПодсластитель: " + order1[3]), reply_markup=markup_apply)
         waiting(message.chat.id, botmessage.message_id)
         order1 = [str(line.strip()) for line in f]
         if order1[0] == "Правильно":
@@ -106,15 +109,34 @@ def dialog(message):
             f.seek(0)
             f.truncate()
             f.close()
-
-@bot.message_handler(func=lambda message: True)
-def rewiev(message):
-    bot.send_message(message.chat.id, "Введите имя")
-    username = message.text
-    print(username)
+    if message.text == 'Написать отзыв':
+        bot.send_message(message.from_user.id, "Введите имя")
+        bot.register_next_step_handler(message, getname)
 
 
+def getname(message):
+    nickname = message.text
+    bot.send_message(message.from_user.id, "Введите отзыв")
+    bot.register_next_step_handler(message, getrewiev)
 
+
+def getrewiev(message):
+    rewiev = message.text
+    bot.send_message(message.from_user.id, "Ваша оценка(от 1 до 5)")
+    bot.register_next_step_handler(message, getmark)
+
+
+def getmark(message):
+    try:
+        mark = int(message.text)
+    except Exception:
+        bot.send_message(message.from_user.id, "Надо ввести число")
+        askmark(message)
+
+
+def askmark(message):
+    bot.send_message(message.from_user.id, "Ваша оценка(от 1 до 5)")
+    bot.register_next_step_handler(message, getmark)
 
 
 @bot.callback_query_handler(func=lambda call: True)
